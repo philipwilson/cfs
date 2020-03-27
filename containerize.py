@@ -5,35 +5,9 @@
 # containerize.py run <cmd> <params>
 
 
-import os, sys, ctypes
-import subprocess
+import os, sys
 import shutil
-
-
-def setns():
-    f = None
-    libc = ctypes.CDLL('libc.so.6')
-    myfd = os.open('/proc/1/ns/mnt', os.O_RDONLY)
-    libc.setns(myfd, 0)
-
-
-
-CLONE_NEWCGROUP = 0x02000000 #	/* New cgroup namespace */
-CLONE_NEWUTS	= 0x04000000 #	/* New utsname namespace */
-CLONE_NEWIPC    = 0x08000000 #	/* New ipc namespace */
-CLONE_NEWUSER	= 0x10000000 #	/* New user namespace */
-CLONE_NEWPID    = 0x20000000 #	/* New pid namespace */
-CLONE_NEWNET	= 0x40000000 #	/* New network namespace */
-
-    
-def unshare(i):
-    libc = ctypes.CDLL('libc.so.6')
-    libc.unshare(i)
-
-    
-def sethostname(newname):
-    libc = ctypes.CDLL('libc.so.6')
-    libc.sethostname(newname, len(newname))
+from libc_bindings import *
 
     
 def run():
@@ -47,6 +21,8 @@ def run():
         unshare(CLONE_NEWUTS)
 #        unshare(CLONE_NEWPID)
         sethostname(b'container')
+        os.chroot('/home/vagrant/ubuntu-fs')
+        os.chdir('/')
         os.execv(path, sys.argv[2:])
     else:
         status = os.wait()
