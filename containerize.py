@@ -8,7 +8,7 @@
 import os, sys
 import shutil
 from libc_bindings import *
-
+from cg_utils import cg
     
 def run():
     path = shutil.which(sys.argv[2])
@@ -18,11 +18,14 @@ def run():
 
     pid = os.fork()
     if pid == 0:
+        cg()
         unshare(CLONE_NEWUTS)
 #        unshare(CLONE_NEWPID)
         sethostname(b'container')
         os.chroot('/home/vagrant/ubuntu-fs')
         os.chdir('/')
+        unshare(CLONE_NEWNS)
+        mount('proc', '/proc', 'proc')
         os.execv(path, sys.argv[2:])
     else:
         status = os.wait()
