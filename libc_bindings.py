@@ -1,13 +1,6 @@
 import os, ctypes, ctypes.util
 
 
-_libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
-
-def setns():
-    myfd = os.open('/proc/1/ns/mnt', os.O_RDONLY)
-    _libc.setns(myfd, 0)
-
-
 # From <linux/sched.h>
 
 #/*                                                                                                                                                                              
@@ -41,6 +34,13 @@ CLONE_NEWNET         = 0x40000000 #     /* New network namespace */
 CLONE_IO             = 0x80000000 #     /* Clone io context */
 
 
+_libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+
+def setns():
+    myfd = os.open('/proc/1/ns/mnt', os.O_RDONLY)
+    _libc.setns(myfd, 0)
+
+
 def unshare(i):
     ret = _libc.unshare(i)
     if ret != 0:
@@ -48,11 +48,16 @@ def unshare(i):
         raise OSError(errno, f"Error unsharing {i}': {os.strerror(errno)}")
 
     
+_libc.sethostname.argtypes = (ctypes.c_char_p, ctypes.c_size_t)
 def sethostname(newname):
-    _libc.sethostname(newname, len(newname))
+    bytestring = newname.encode()
+    ret = _libc.sethostname(bytestring, len(bytestring))
+    if ret == -1:
+        errno = ctypes.get_errno()
+        raise OSError(errno, f"Error setting hostname {newname}: {os.strerror(errno)}")
+
 
 _libc.mount.argtypes = (ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_ulong, ctypes.c_char_p)
-
 def mount(source, target, fs, options=''):
   ret = _libc.mount(source.encode(), target.encode(), fs.encode(), 0, options.encode())
   if ret < 0:

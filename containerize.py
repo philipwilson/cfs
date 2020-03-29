@@ -2,7 +2,7 @@
 
 # docker run image <cmd> <params>
 
-# containerize.py run <cmd> <params>
+# containerize.py run <image_dir> <cmd> <params>
 
 
 import os, sys
@@ -10,30 +10,38 @@ import shutil
 from libc_bindings import *
 from cg_utils import cg
     
-def run():
-    path = shutil.which(sys.argv[2])
-    if path is None:
-        print("could not find ", argv[2], file=sys.stderr)
-        exit(0)
-
-    pid = os.fork()
-    if pid == 0:
-        cg()
-        unshare(CLONE_NEWUTS)
-#        unshare(CLONE_NEWPID)
-        sethostname(b'container')
+def run(image_dir, cmd, params):
+    cg()
+    if os.path.exists(image_dir) and os.path.isdir(image_dir):
         os.chroot('/home/vagrant/ubuntu-fs')
         os.chdir('/')
-        unshare(CLONE_NEWNS)
+    else:
+        print("could not find ", cmd, file=sys.stderr)
+        exit(-1)
+    
+    path = shutil.which(cmd)
+    if path is None:
+        print("could not find ", cmd, file=sys.stderr)
+        exit(-1)
+
+    unshare(CLONE_NEWUTS | CLONE_NEWPID | CLONE_NEWNS) 
+    
+    pid = os.fork()
+    if pid == 0:
+#        cg()
+        sethostname('桜の花')
+#        sethostname('container')
+#        os.chroot('/home/vagrant/ubuntu-fs')
+#        os.chdir('/')
         mount('proc', '/proc', 'proc')
-        os.execv(path, sys.argv[2:])
+        os.execv(path, params)
     else:
         status = os.wait()
 
     
 def main():
     if sys.argv[1] == 'run':
-        run()
+        run(sys.argv[2], sys.argv[3], sys.argv[3:])
 
     else:
         print("unimplemented command " + sys.argv[1], file=sys.stderr)
