@@ -63,3 +63,12 @@ def mount(source, target, fs, options=''):
   if ret < 0:
     errno = ctypes.get_errno()
     raise OSError(errno, f"Error mounting {source} ({fs}) on {target} with options '{options}': {os.strerror(errno)}")
+
+
+#_libc.umount.argtypes = (ctypes.c_char_p)
+def umount(source):
+  ret = _libc.umount(source.encode())
+  if ret < 0:
+    errno = ctypes.get_errno()
+    raise OSError(errno, f"Error unmounting {source}: {os.strerror(errno)}")
+

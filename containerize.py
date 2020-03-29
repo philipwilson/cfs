@@ -12,31 +12,30 @@ from cg_utils import cg
     
 def run(image_dir, cmd, params):
     cg()
+
     if os.path.exists(image_dir) and os.path.isdir(image_dir):
         os.chroot('/home/vagrant/ubuntu-fs')
         os.chdir('/')
+        
     else:
         print("could not find ", cmd, file=sys.stderr)
         exit(-1)
-    
+        
     path = shutil.which(cmd)
     if path is None:
         print("could not find ", cmd, file=sys.stderr)
         exit(-1)
 
-    unshare(CLONE_NEWUTS | CLONE_NEWPID | CLONE_NEWNS) 
-    
+    unshare(CLONE_NEWUTS | CLONE_NEWPID) 
+
     pid = os.fork()
     if pid == 0:
-#        cg()
-        sethostname('桜の花')
-#        sethostname('container')
-#        os.chroot('/home/vagrant/ubuntu-fs')
-#        os.chdir('/')
         mount('proc', '/proc', 'proc')
+        sethostname('桜の花')
         os.execv(path, params)
     else:
         status = os.wait()
+        umount('/proc')
 
     
 def main():
