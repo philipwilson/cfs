@@ -14,11 +14,11 @@ def run(image_dir, cmd, params):
     cg()
 
     if os.path.exists(image_dir) and os.path.isdir(image_dir):
-        os.chroot('/home/vagrant/ubuntu-fs')
+        os.chroot(image_dir)
         os.chdir('/')
         
     else:
-        print("could not find ", cmd, file=sys.stderr)
+        print("could not find ", image_dir, file=sys.stderr)
         exit(-1)
         
     path = shutil.which(cmd)

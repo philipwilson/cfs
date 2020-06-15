@@ -39,7 +39,7 @@ _libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
 def setns():
     myfd = os.open('/proc/1/ns/mnt', os.O_RDONLY)
     _libc.setns(myfd, 0)
-
+    os.close(myfd)
 
 def unshare(i):
     ret = _libc.unshare(i)
