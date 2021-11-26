@@ -8,14 +8,16 @@
 import os, sys
 import shutil
 from libc_bindings import *
-from cg_utils import cg
-    
-def run(image_dir, cmd, params):
-    cg()
+from control_group import ControlGroup
 
+def run(image_dir, cmd, params):
+    cg = ControlGroup("containerize")
+    cg.set_pids(10)
+
+    
     if os.path.exists(image_dir) and os.path.isdir(image_dir):
         os.chroot(image_dir)
-        os.chdir('/')
+        os.chdir(image_dir)
         
     else:
         print("could not find ", image_dir, file=sys.stderr)
@@ -26,17 +28,17 @@ def run(image_dir, cmd, params):
         print("could not find ", cmd, file=sys.stderr)
         exit(-1)
 
-    unshare(CLONE_NEWUTS | CLONE_NEWPID) 
 
+    unshare(CLONE_NEWUTS | CLONE_NEWPID)
+    
     pid = os.fork()
     if pid == 0:
+        sethostname("containerize")
         mount('proc', '/proc', 'proc')
-        sethostname('桜の花')
         os.execv(path, params)
     else:
         status = os.wait()
         umount('/proc')
-
     
 def main():
     if sys.argv[1] == 'run':
